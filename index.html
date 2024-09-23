@@ -3,50 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planificador Round Robin</title>
-    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUGxhbmlmaWNhZG9yIFJvdW5kIFJvYmluIiwic2hvcnRfbmFtZSI6IlJSIFBsYW5uZXIiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2ZmZmZmZiIsInRoZW1lX2NvbG9yIjoiIzIxOTZGMyIsImljb25zIjpbeyJzcmMiOiJodHRwczovL3ZpYS5wbGFjZWhvbGRlci5jb20vMTkyeDE5Mi5wbmciLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
+    <title>Planificador Round Robin Completo</title>
     <style>
-        /* ... (estilos anteriores) ... */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: #fff;
+        }
+        .current {
+            background-color: #e3f2fd;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
         .timeline {
             display: flex;
             overflow-x: auto;
             margin-top: 20px;
             padding: 10px 0;
-            background-color: #f0f0f0;
+            background-color: #ecf0f1;
         }
         .timeline-block {
             flex: 0 0 auto;
             width: 30px;
             height: 30px;
-            border: 1px solid #ddd;
+            border: 1px solid #bdc3c7;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 12px;
             font-weight: bold;
         }
+        .stats {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- ... (contenido HTML anterior) ... -->
-        <div class="timeline" id="timeline"></div>
+    <div class="container">
+        <h1>Planificador Round Robin Completo</h1>
+        
+        <div class="controls">
+            <h2>Configuración</h2>
+            <label for="timeQuantum">Quantum de Tiempo:</label>
+            <input type="number" id="timeQuantum" value="2" min="1">
+            <button onclick="updateTimeQuantum()">Actualizar Quantum</button>
+            <button onclick="startSimulation()">Iniciar Simulación</button>
+            <button onclick="pauseSimulation()">Pausar Simulación</button>
+            <button onclick="resetSimulation()">Reiniciar Simulación</button>
+        </div>
+
+        <div>
+            <h2>Agregar Nuevo Proceso</h2>
+            <input type="number" id="newProcessId" placeholder="ID del Proceso">
+            <input type="number" id="newProcessBurst" placeholder="Tiempo de Ráfaga">
+            <input type="number" id="newProcessArrival" placeholder="Tiempo de Llegada">
+            <button onclick="addNewProcess()">Agregar Proceso</button>
+        </div>
+
+        <h2>Lista de Procesos</h2>
+        <table id="processTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tiempo de Ráfaga</th>
+                    <th>Tiempo Restante</th>
+                    <th>Tiempo de Llegada</th>
+                    <th>Tiempo de Finalización</th>
+                    <th>Tiempo de Retorno</th>
+                    <th>Tiempo de Espera</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Los procesos se agregarán aquí dinámicamente -->
+            </tbody>
+        </table>
+
+        <div>
+            <h2>Estado Actual</h2>
+            <p>Tiempo Actual: <span id="currentTime">0</span></p>
+            <p>Proceso en Ejecución: <span id="currentProcess">Ninguno</span></p>
+        </div>
+
+        <div>
+            <h2>Línea de Tiempo de Ejecución</h2>
+            <div class="timeline" id="timeline"></div>
+        </div>
+
+        <div class="stats">
+            <h2>Estadísticas</h2>
+            <p>Tiempo de Retorno Promedio: <span id="avgTurnaround">0</span></p>
+            <p>Tiempo de Espera Promedio: <span id="avgWaiting">0</span></p>
+        </div>
     </div>
 
     <script>
         let processes = [
-            { id: 1, burstTime: 10, remainingTime: 10, color: '#FF9800' },
-            { id: 2, burstTime: 5, remainingTime: 5, color: '#4CAF50' },
-            { id: 3, burstTime: 8, remainingTime: 8, color: '#2196F3' },
+            { id: 1, burstTime: 10, remainingTime: 10, arrivalTime: 0, completionTime: null, color: '#e74c3c' },
+            { id: 2, burstTime: 5, remainingTime: 5, arrivalTime: 1, completionTime: null, color: '#3498db' },
+            { id: 3, burstTime: 8, remainingTime: 8, arrivalTime: 3, completionTime: null, color: '#2ecc71' }
         ];
         let timeQuantum = 2;
         let currentTime = 0;
-        let currentProcessIndex = 0;
-        let intervalId;
+        let currentProcessIndex = null;
         let timeline = [];
+        let intervalId = null;
 
         function updateTable() {
-            // ... (código anterior de updateTable) ...
+            const tbody = document.querySelector('#processTable tbody');
+            tbody.innerHTML = '';
+            processes.forEach((process, index) => {
+                const row = tbody.insertRow();
+                const turnaroundTime = process.completionTime !== null ? process.completionTime - process.arrivalTime : '-';
+                const waitingTime = turnaroundTime !== '-' ? turnaroundTime - process.burstTime : '-';
+                row.innerHTML = `
+                    <td>${process.id}</td>
+                    <td>${process.burstTime}</td>
+                    <td>${process.remainingTime}</td>
+                    <td>${process.arrivalTime}</td>
+                    <td>${process.completionTime !== null ? process.completionTime : '-'}</td>
+                    <td>${turnaroundTime}</td>
+                    <td>${waitingTime}</td>
+                `;
+                if (index === currentProcessIndex) {
+                    row.classList.add('current');
+                }
+            });
+            updateStatistics();
         }
 
         function updateTimeQuantum() {
@@ -55,25 +182,46 @@
 
         function runSimulation() {
             if (processes.every(p => p.remainingTime === 0)) {
-                stopSimulation();
+                pauseSimulation();
                 return;
             }
 
             currentTime++;
             document.getElementById('currentTime').textContent = currentTime;
 
-            let currentProcess = processes[currentProcessIndex];
-            if (currentProcess.remainingTime > 0) {
+            // Agregar procesos que llegan en este momento
+            processes.forEach(process => {
+                if (process.arrivalTime === currentTime) {
+                    process.firstTimeInQueue = true;
+                }
+            });
+
+            // Si no hay proceso actual o el proceso actual ha terminado, seleccionar el siguiente
+            if (currentProcessIndex === null || processes[currentProcessIndex].remainingTime === 0) {
+                currentProcessIndex = processes.findIndex(p => p.remainingTime > 0 && p.arrivalTime <= currentTime);
+            }
+
+            if (currentProcessIndex !== -1) {
+                let currentProcess = processes[currentProcessIndex];
                 currentProcess.remainingTime--;
                 document.getElementById('currentProcess').textContent = currentProcess.id;
                 timeline.push(currentProcess.id);
                 updateTimeline();
-            }
 
-            if (currentProcess.remainingTime === 0 || currentTime % timeQuantum === 0) {
-                do {
-                    currentProcessIndex = (currentProcessIndex + 1) % processes.length;
-                } while (processes[currentProcessIndex].remainingTime === 0 && processes.some(p => p.remainingTime > 0));
+                if (currentProcess.remainingTime === 0) {
+                    currentProcess.completionTime = currentTime;
+                }
+
+                // Cambiar al siguiente proceso si se agotó el quantum o el proceso terminó
+                if (currentProcess.remainingTime === 0 || (currentTime - Math.max(currentProcess.arrivalTime, timeline.indexOf(currentProcess.id))) % timeQuantum === 0) {
+                    do {
+                        currentProcessIndex = (currentProcessIndex + 1) % processes.length;
+                    } while (processes[currentProcessIndex].remainingTime === 0 || processes[currentProcessIndex].arrivalTime > currentTime);
+                }
+            } else {
+                document.getElementById('currentProcess').textContent = 'Ninguno';
+                timeline.push(null);
+                updateTimeline();
             }
 
             updateTable();
@@ -85,11 +233,28 @@
             timeline.forEach((processId, index) => {
                 const block = document.createElement('div');
                 block.className = 'timeline-block';
-                block.style.backgroundColor = processes.find(p => p.id === processId).color;
-                block.textContent = processId;
-                block.title = `Tiempo ${index + 1}: Proceso ${processId}`;
+                if (processId !== null) {
+                    const process = processes.find(p => p.id === processId);
+                    block.style.backgroundColor = process.color;
+                    block.textContent = processId;
+                } else {
+                    block.style.backgroundColor = '#ecf0f1';
+                    block.textContent = '-';
+                }
+                block.title = `Tiempo ${index + 1}: ${processId !== null ? 'Proceso ' + processId : 'Inactivo'}`;
                 timelineElement.appendChild(block);
             });
+        }
+
+        function updateStatistics() {
+            const completedProcesses = processes.filter(p => p.completionTime !== null);
+            if (completedProcesses.length === 0) return;
+
+            const avgTurnaround = completedProcesses.reduce((sum, p) => sum + (p.completionTime - p.arrivalTime), 0) / completedProcesses.length;
+            const avgWaiting = completedProcesses.reduce((sum, p) => sum + (p.completionTime - p.arrivalTime - p.burstTime), 0) / completedProcesses.length;
+
+            document.getElementById('avgTurnaround').textContent = avgTurnaround.toFixed(2);
+            document.getElementById('avgWaiting').textContent = avgWaiting.toFixed(2);
         }
 
         function startSimulation() {
@@ -98,35 +263,55 @@
             }
         }
 
-        function stopSimulation() {
+        function pauseSimulation() {
             if (intervalId) {
                 clearInterval(intervalId);
                 intervalId = null;
             }
         }
 
+        function resetSimulation() {
+            pauseSimulation();
+            processes.forEach(p => {
+                p.remainingTime = p.burstTime;
+                p.completionTime = null;
+            });
+            currentTime = 0;
+            currentProcessIndex = null;
+            timeline = [];
+            document.getElementById('currentTime').textContent = '0';
+            document.getElementById('currentProcess').textContent = 'Ninguno';
+            updateTable();
+            updateTimeline();
+        }
+
         function addNewProcess() {
+            const id = parseInt(document.getElementById('newProcessId').value);
             const burstTime = parseInt(document.getElementById('newProcessBurst').value);
-            if (burstTime > 0) {
-                const newId = processes.length > 0 ? Math.max(...processes.map(p => p.id)) + 1 : 1;
-                const colors = ['#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#00BCD4', '#009688', '#FFEB3B', '#FF5722'];
+            const arrivalTime = parseInt(document.getElementById('newProcessArrival').value);
+            
+            if (id && burstTime >= 0 && arrivalTime >= 0) {
+                const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e'];
                 const newColor = colors[processes.length % colors.length];
-                processes.push({ id: newId, burstTime: burstTime, remainingTime: burstTime, color: newColor });
+                processes.push({ 
+                    id: id, 
+                    burstTime: burstTime, 
+                    remainingTime: burstTime, 
+                    arrivalTime: arrivalTime,
+                    completionTime: null,
+                    color: newColor 
+                });
                 updateTable();
+                document.getElementById('newProcessId').value = '';
                 document.getElementById('newProcessBurst').value = '';
+                document.getElementById('newProcessArrival').value = '';
+            } else {
+                alert('Por favor, ingrese valores válidos para el nuevo proceso.');
             }
         }
 
         updateTable();
-
-        // Registro del Service Worker para PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(function(registration) {
-                console.log('Service Worker registrado con éxito:', registration.scope);
-            }).catch(function(error) {
-                console.log('Registro de Service Worker fallido:', error);
-            });
-        }
+        updateTimeline();
     </script>
 </body>
 </html>
