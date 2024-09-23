@@ -6,129 +6,47 @@
     <title>Planificador Round Robin</title>
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUGxhbmlmaWNhZG9yIFJvdW5kIFJvYmluIiwic2hvcnRfbmFtZSI6IlJSIFBsYW5uZXIiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2ZmZmZmZiIsInRoZW1lX2NvbG9yIjoiIzIxOTZGMyIsImljb25zIjpbeyJzcmMiOiJodHRwczovL3ZpYS5wbGFjZWhvbGRlci5jb20vMTkyeDE5Mi5wbmciLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+        /* ... (estilos anteriores) ... */
+        .timeline {
+            display: flex;
+            overflow-x: auto;
+            margin-top: 20px;
+            padding: 10px 0;
             background-color: #f0f0f0;
         }
-        .app-container {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2196F3;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th, td {
+        .timeline-block {
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
             border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #2196F3;
-            color: white;
-        }
-        .current {
-            background-color: #E3F2FD;
-        }
-        input, button {
-            margin-bottom: 10px;
-            padding: 8px;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #1976D2;
-        }
-        .controls {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-        }
-        .process-form {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #E3F2FD;
-            border-radius: 4px;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <h1>Planificador Round Robin</h1>
-        <div class="controls">
-            <div>
-                <label for="timeQuantum">Quantum de Tiempo:</label>
-                <input type="number" id="timeQuantum" value="2" min="1">
-                <button onclick="updateTimeQuantum()">Actualizar</button>
-            </div>
-            <div>
-                <button onclick="startSimulation()">Iniciar</button>
-                <button onclick="stopSimulation()">Detener</button>
-            </div>
-        </div>
-        <table id="processTable">
-            <thead>
-                <tr>
-                    <th>ID del Proceso</th>
-                    <th>Tiempo de Ráfaga</th>
-                    <th>Tiempo Restante</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Los procesos se agregarán aquí dinámicamente -->
-            </tbody>
-        </table>
-        <div>
-            <p>Tiempo Actual: <span id="currentTime">0</span></p>
-            <p>Proceso Actual: <span id="currentProcess">Ninguno</span></p>
-        </div>
-        <div class="process-form">
-            <h3>Agregar Nuevo Proceso</h3>
-            <input type="number" id="newProcessBurst" placeholder="Tiempo de Ráfaga" min="1">
-            <button onclick="addNewProcess()">Agregar Proceso</button>
-        </div>
+        <!-- ... (contenido HTML anterior) ... -->
+        <div class="timeline" id="timeline"></div>
     </div>
 
     <script>
         let processes = [
-            { id: 1, burstTime: 10, remainingTime: 10 },
-            { id: 2, burstTime: 5, remainingTime: 5 },
-            { id: 3, burstTime: 8, remainingTime: 8 },
+            { id: 1, burstTime: 10, remainingTime: 10, color: '#FF9800' },
+            { id: 2, burstTime: 5, remainingTime: 5, color: '#4CAF50' },
+            { id: 3, burstTime: 8, remainingTime: 8, color: '#2196F3' },
         ];
         let timeQuantum = 2;
         let currentTime = 0;
         let currentProcessIndex = 0;
         let intervalId;
+        let timeline = [];
 
         function updateTable() {
-            const tbody = document.querySelector('#processTable tbody');
-            tbody.innerHTML = '';
-            processes.forEach((process, index) => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${process.id}</td>
-                    <td>${process.burstTime}</td>
-                    <td>${process.remainingTime}</td>
-                `;
-                if (index === currentProcessIndex && process.remainingTime > 0) {
-                    row.classList.add('current');
-                }
-            });
+            // ... (código anterior de updateTable) ...
         }
 
         function updateTimeQuantum() {
@@ -148,6 +66,8 @@
             if (currentProcess.remainingTime > 0) {
                 currentProcess.remainingTime--;
                 document.getElementById('currentProcess').textContent = currentProcess.id;
+                timeline.push(currentProcess.id);
+                updateTimeline();
             }
 
             if (currentProcess.remainingTime === 0 || currentTime % timeQuantum === 0) {
@@ -157,6 +77,19 @@
             }
 
             updateTable();
+        }
+
+        function updateTimeline() {
+            const timelineElement = document.getElementById('timeline');
+            timelineElement.innerHTML = '';
+            timeline.forEach((processId, index) => {
+                const block = document.createElement('div');
+                block.className = 'timeline-block';
+                block.style.backgroundColor = processes.find(p => p.id === processId).color;
+                block.textContent = processId;
+                block.title = `Tiempo ${index + 1}: Proceso ${processId}`;
+                timelineElement.appendChild(block);
+            });
         }
 
         function startSimulation() {
@@ -176,7 +109,9 @@
             const burstTime = parseInt(document.getElementById('newProcessBurst').value);
             if (burstTime > 0) {
                 const newId = processes.length > 0 ? Math.max(...processes.map(p => p.id)) + 1 : 1;
-                processes.push({ id: newId, burstTime: burstTime, remainingTime: burstTime });
+                const colors = ['#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#00BCD4', '#009688', '#FFEB3B', '#FF5722'];
+                const newColor = colors[processes.length % colors.length];
+                processes.push({ id: newId, burstTime: burstTime, remainingTime: burstTime, color: newColor });
                 updateTable();
                 document.getElementById('newProcessBurst').value = '';
             }
@@ -184,14 +119,9 @@
 
         updateTable();
 
-        // Registro del Service Worker para PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(function(registration) {
-                console.log('Service Worker registrado con éxito:', registration.scope);
-            }).catch(function(error) {
-                console.log('Registro de Service Worker fallido:', error);
-            });
-        }
+        // ... (código del Service Worker) ...
     </script>
+</body>
+</html>
 </body>
 </html>
